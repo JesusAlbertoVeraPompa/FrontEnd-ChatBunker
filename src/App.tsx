@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ChatProvider } from '@/context/ChatContext'
 import LoginPage from '@/pages/LoginPage'
-import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 
 // ─── Ruta protegida ───────────────────────────────────────────────────────────
@@ -75,14 +74,8 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/register"
-        element={
-          <PublicRoute>
-            <RegisterPage />
-          </PublicRoute>
-        }
-      />
+      {/* Redirigir registro al login ya que usamos Social Login únicamente */}
+      <Route path="/register" element={<Navigate to="/login" replace />} />
 
       <Route
         path="/dashboard"

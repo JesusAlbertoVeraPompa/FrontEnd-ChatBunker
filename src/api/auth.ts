@@ -2,12 +2,8 @@ import { apiClient } from './client'
 import type { AuthTokens, LoginPayload, RegisterPayload, User } from '@/types'
 
 export const authApi = {
-  login(payload: LoginPayload) {
-    return apiClient.post<AuthTokens>('/auth/login/', payload)
-  },
-
-  register(payload: RegisterPayload) {
-    return apiClient.post('/auth/register/', payload)
+  socialLogin(accessToken: string, provider: 'google' | 'facebook') {
+    return apiClient.post<AuthTokens>(`/auth/${provider}/`, { access_token: accessToken })
   },
 
   logout(refresh: string) {

@@ -2,14 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import type { ReactNode } from 'react'
 import { authApi, usersApi } from '@/api/auth'
 import { TokenStorage } from '@/utils/storage'
-import type { LoginPayload, RegisterPayload, User } from '@/types'
+import type { User, AuthTokens } from '@/types'
 
 interface AuthContextValue {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (payload: LoginPayload) => Promise<void>
-  register: (payload: RegisterPayload) => Promise<void>
+  socialLogin: (accessToken: string, provider: 'google' | 'facebook') => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -41,15 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     restore()
   }, [])
 
-  const login = useCallback(async (payload: LoginPayload) => {
-    const { data: tokens } = await authApi.login(payload)
+  const socialLogin = useCallback(async (accessToken: string, provider: 'google' | 'facebook') => {
+    const { data: tokens } = await authApi.socialLogin(accessToken, provider)
     TokenStorage.setTokens(tokens)
     const { data: me } = await usersApi.me()
     setUser(me)
-  }, [])
-
-  const register = useCallback(async (payload: RegisterPayload) => {
-    await authApi.register(payload)
   }, [])
 
   const logout = useCallback(async () => {
@@ -58,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await authApi.logout(refreshToken)
       } catch {
-        // silencioso — limpiar igual
+        // silencioso
       }
     }
     TokenStorage.clearTokens()
@@ -67,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}
+      value={{ user, isAuthenticated: !!user, isLoading, socialLogin, logout }}
     >
       {children}
     </AuthContext.Provider>

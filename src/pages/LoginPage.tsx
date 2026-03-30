@@ -1,29 +1,23 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Lock, Mail, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { ShieldCheck, Mail, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 export default function LoginPage() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPass, setShowPass] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { socialLogin } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+  const handleGoogleLogin = async () => {
     setIsLoading(true)
+    setError(null)
     try {
-      await login({ email, password })
-      navigate('/dashboard')
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } } }
-      setError(e?.response?.data?.detail ?? 'Credenciales incorrectas.')
+      // 1. Simulación o integración real con Google SDK
+      // Para pruebas, el token debe obtenerse de Google
+      const mockToken = "GOOGLE_TOKEN_HERE" 
+      await socialLogin(mockToken, 'google')
+    } catch (err: any) {
+      setError(err?.response?.data?.detail ?? 'Error al conectar con Google.')
     } finally {
       setIsLoading(false)
     }
@@ -100,7 +94,7 @@ export default function LoginPage() {
               letterSpacing: '0.2em',
             }}
           >
-            MENSAJERÍA PRIVADA E2EE
+            ACCESO PRIVADO E2EE
           </p>
         </div>
 
@@ -113,16 +107,20 @@ export default function LoginPage() {
             borderRadius: 20,
             padding: '32px 28px',
             boxShadow: '0 0 40px rgba(0, 243, 255, 0.05)',
+            textAlign: 'center'
           }}
         >
-          <h2 style={{ margin: '0 0 24px', color: '#e0e0e0', fontSize: 18, fontWeight: 600 }}>
-            Acceder
+          <h2 style={{ margin: '0 0 12px', color: '#e0e0e0', fontSize: 18, fontWeight: 600 }}>
+            Bienvenido al Bunker
           </h2>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 32 }}>
+            Inicia sesión de forma segura para acceder a tus conversaciones cifradas.
+          </p>
 
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               style={{
                 background: 'rgba(255, 0, 0, 0.08)',
                 border: '1px solid rgba(255, 60, 60, 0.4)',
@@ -137,136 +135,43 @@ export default function LoginPage() {
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <InputField
-              icon={<Mail size={16} />}
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={setEmail}
-              required
-            />
+          <motion.button
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              width: '100%',
+              padding: '14px 0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              background: '#fff',
+              border: 'none',
+              borderRadius: 12,
+              color: '#000',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: isLoading ? 'default' : 'pointer',
+              transition: 'all 0.2s',
+              fontFamily: 'Inter, sans-serif',
+            }}
+          >
+            {isLoading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <>
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" style={{ width: 20 }} />
+                <span>ACCEDER CON GOOGLE</span>
+              </>
+            )}
+          </motion.button>
 
-            <div style={{ position: 'relative', marginBottom: 20 }}>
-              <InputField
-                icon={<Lock size={16} />}
-                type={showPass ? 'text' : 'password'}
-                placeholder="Contraseña"
-                value={password}
-                onChange={setPassword}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                style={{
-                  position: 'absolute',
-                  right: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'rgba(255,255,255,0.4)',
-                  display: 'flex',
-                  padding: 4,
-                }}
-              >
-                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-
-            <motion.button
-              type="submit"
-              disabled={isLoading}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                width: '100%',
-                padding: '13px 0',
-                background: isLoading
-                  ? 'rgba(0, 243, 255, 0.2)'
-                  : 'linear-gradient(135deg, #00f3ff, #bc00ff)',
-                border: 'none',
-                borderRadius: 12,
-                color: isLoading ? '#00f3ff' : '#000',
-                fontSize: 14,
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                cursor: isLoading ? 'default' : 'pointer',
-                boxShadow: isLoading ? undefined : '0 0 20px rgba(0, 243, 255, 0.4)',
-                transition: 'all 0.2s',
-                fontFamily: 'Inter, sans-serif',
-              }}
-            >
-              {isLoading ? 'CONECTANDO...' : 'ENTRAR AL BUNKER'}
-            </motion.button>
-          </form>
-
-          <p style={{ margin: '20px 0 0', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
-            ¿Sin cuenta?{' '}
-            <Link
-              to="/register"
-              style={{ color: '#00f3ff', textDecoration: 'none', fontWeight: 600 }}
-            >
-              Registrarse
-            </Link>
+          <p style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: '"Space Mono", monospace' }}>
+            Protegido por protocolos de cifrado militar AES-256
           </p>
         </div>
       </motion.div>
-    </div>
-  )
-}
-
-// ─── Componente interno de input ──────────────────────────────────────────────
-
-interface InputFieldProps {
-  icon: React.ReactNode
-  type: string
-  placeholder: string
-  value: string
-  onChange: (v: string) => void
-  required?: boolean
-}
-
-function InputField({ icon, type, placeholder, value, onChange, required }: InputFieldProps) {
-  const [focused, setFocused] = useState(false)
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        background: 'rgba(255,255,255,0.04)',
-        border: `1px solid ${focused ? '#00f3ff' : 'rgba(255,255,255,0.1)'}`,
-        borderRadius: 12,
-        padding: '10px 14px',
-        marginBottom: 14,
-        boxShadow: focused ? '0 0 12px rgba(0, 243, 255, 0.2)' : undefined,
-        transition: 'border-color 0.2s, box-shadow 0.2s',
-      }}
-    >
-      <span style={{ color: focused ? '#00f3ff' : 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
-        {icon}
-      </span>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        required={required}
-        style={{
-          flex: 1,
-          background: 'none',
-          border: 'none',
-          outline: 'none',
-          color: '#e0e0e0',
-          fontSize: 14,
-          fontFamily: 'Inter, sans-serif',
-        }}
-      />
     </div>
   )
 }
