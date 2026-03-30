@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { Conversation, Message } from '@/types'
+import type { Conversation, Message, User } from '@/types'
 
 export const chatApi = {
   getConversations() {
