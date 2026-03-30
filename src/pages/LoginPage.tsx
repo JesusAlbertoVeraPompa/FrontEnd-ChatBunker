@@ -11,10 +11,13 @@ export default function LoginPage() {
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
+      if (!tokenResponse?.access_token) {
+        setError('Google no devolvió un token de acceso válido.')
+        return
+      }
       setIsLoading(true)
       setError(null)
       try {
-        // Enviar el access_token real obtenido de Google al backend
         await socialLogin(tokenResponse.access_token, 'google')
       } catch (err: any) {
         setError(err?.response?.data?.detail ?? 'Error al autenticar con el servidor.')
