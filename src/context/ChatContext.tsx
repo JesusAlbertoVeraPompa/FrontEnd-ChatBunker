@@ -1,0 +1,237 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
+import type { ReactNode } from 'react'
+import { chatApi, buildWSUrl } from '@/api/chat'
+import { TokenStorage } from '@/utils/storage'
+import { generateKeyPair, deriveSharedKey, encryptMessage, decryptMessage, isCiphertext } from '@/utils/crypto'
+import type { KeyPair } from '@/utils/crypto'
+import type { Conversation, Message, WSIncoming } from '@/types'
+import { useAuth } from './AuthContext'
+
+interface ChatContextValue {
+  conversations: Conversation[]
+  activeConversation: Conversation | null
+  messages: Message[]
+  isLoadingConversations: boolean
+  isLoadingMessages: boolean
+  isEncrypted: boolean   // true cuando el intercambio de claves está completo
+  selectConversation: (conv: Conversation) => void
+  sendMessage: (text: string) => Promise<void>
+  requestDelete: (messageId: string) => void
+  refreshConversations: () => Promise<void>
+}
+
+const ChatContext = createContext<ChatContextValue | null>(null)
+
+export function ChatProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [isEncrypted, setIsEncrypted] = useState(false)
+
+  const wsRef = useRef<WebSocket | null>(null)
+  const keyPairRef = useRef<KeyPair | null>(null)
+  const sharedKeyRef = useRef<CryptoKey | null>(null)
+
+  // Carga de conversaciones
+  const refreshConversations = useCallback(async () => {
+    setIsLoadingConversations(true)
+    try {
+      const { data } = await chatApi.getConversations()
+      // Añadir el "contact" (el participante que NO es el usuario actual)
+      const enriched = data.map((conv) => ({
+        ...conv,
+        contact: conv.participants.find((p) => p.id !== user?.id) ?? conv.participants[0],
+      }))
+      setConversations(enriched)
+    } catch {
+      // Error de red — mantener estado anterior
+    } finally {
+      setIsLoadingConversations(false)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (user) refreshConversations()
+  }, [user, refreshConversations])
+
+  // Desconectar WebSocket anterior al cambiar de conversación
+  const closeWS = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close()
+      wsRef.current = null
+    }
+    sharedKeyRef.current = null
+    keyPairRef.current = null
+    setIsEncrypted(false)
+  }, [])
+
+  const selectConversation = useCallback(
+    async (conv: Conversation) => {
+      if (activeConversation?.id === conv.id) return
+
+      closeWS()
+      setActiveConversation(conv)
+      setMessages([])
+      setIsEncrypted(false)
+
+      // Cargar historial
+      setIsLoadingMessages(true)
+      try {
+        const { data } = await chatApi.getChatHistory(conv.id)
+        // Intentar descifrar mensajes del historial (si hay clave compartida)
+        setMessages(data)
+      } catch {
+        setMessages([])
+      } finally {
+        setIsLoadingMessages(false)
+      }
+
+      // Abrir WebSocket
+      const accessToken = TokenStorage.getAccessToken()
+      if (!accessToken) return
+
+      const ws = new WebSocket(buildWSUrl(conv.id, accessToken))
+      wsRef.current = ws
+
+      ws.onopen = async () => {
+        // Generar par de claves para esta sesión y enviar clave pública
+        const kp = await generateKeyPair()
+        keyPairRef.current = kp
+        ws.send(JSON.stringify({ action: 'key_exchange', public_key: kp.publicKeyBase64 }))
+      }
+
+      ws.onmessage = async (event: MessageEvent) => {
+        const msg: WSIncoming = JSON.parse(event.data as string)
+
+        if (msg.type === 'relay_key' && keyPairRef.current) {
+          // Recibir clave del partner y derivar secreto compartido
+          try {
+            const hadKey = !!sharedKeyRef.current
+            const shared = await deriveSharedKey(keyPairRef.current.privateKey, msg.public_key)
+            sharedKeyRef.current = shared
+            setIsEncrypted(true)
+
+            // Si no teníamos la llave y el mensaje viene del otro, respondemos con la nuestra
+            if (msg.sender !== user?.id && !hadKey) {
+              ws.send(JSON.stringify({ action: 'key_exchange', public_key: keyPairRef.current.publicKeyBase64 }))
+            }
+
+            // Re-descifrar mensajes del historial con la nueva clave
+            setMessages((prev) =>
+              prev.map((m) => ({
+                ...m,
+                decrypted_content: m.decrypted_content ?? m.encrypted_content,
+              }))
+            )
+          } catch {
+            // Error en derivación de clave
+          }
+        }
+
+        if (msg.type === 'chat_message') {
+          let decrypted = msg.content
+          if (sharedKeyRef.current && isCiphertext(msg.content)) {
+            try {
+              decrypted = await decryptMessage(msg.content, sharedKeyRef.current)
+            } catch {
+              decrypted = '[Mensaje cifrado - clave no disponible]'
+            }
+          }
+
+          const newMsg: Message = {
+            id: msg.message_id,
+            sender: msg.sender,
+            sender_email: '',
+            encrypted_content: msg.content,
+            decrypted_content: decrypted,
+            message_type: (msg.msg_type as 'Text' | 'Audio') ?? 'Text',
+            timestamp: msg.timestamp,
+            is_mine: msg.sender === user?.id,
+            status: 'delivered',
+          }
+
+          setMessages((prev) => {
+            // Evitar duplicados
+            if (prev.some((m) => m.id === msg.message_id)) return prev
+            return [...prev, newMsg]
+          })
+
+          // Actualizar last_message en la lista de conversaciones
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === conv.id ? { ...c, last_message: newMsg } : c
+            )
+          )
+        }
+
+        if (msg.type === 'delete_notification') {
+          if (msg.is_permanent) {
+            setMessages((prev) => prev.filter((m) => m.id !== msg.message_id))
+          }
+        }
+      }
+
+      ws.onerror = () => {
+        // Reconectar tras error podría implementarse aquí
+      }
+    },
+    [activeConversation?.id, closeWS, user?.id]
+  )
+
+  const sendMessage = useCallback(async (text: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+
+    let content = text
+    if (sharedKeyRef.current) {
+      content = await encryptMessage(text, sharedKeyRef.current)
+    }
+
+    wsRef.current.send(
+      JSON.stringify({ action: 'send_message', encrypted_content: content, type: 'Text' })
+    )
+  }, [])
+
+  const requestDelete = useCallback((messageId: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    wsRef.current.send(JSON.stringify({ action: 'request_delete', message_id: messageId }))
+  }, [])
+
+  // Limpiar al desmontar
+  useEffect(() => () => { closeWS() }, [closeWS])
+
+  return (
+    <ChatContext.Provider
+      value={{
+        conversations,
+        activeConversation,
+        messages,
+        isLoadingConversations,
+        isLoadingMessages,
+        isEncrypted,
+        selectConversation,
+        sendMessage,
+        requestDelete,
+        refreshConversations,
+      }}
+    >
+      {children}
+    </ChatContext.Provider>
+  )
+}
+
+export function useChat(): ChatContextValue {
+  const ctx = useContext(ChatContext)
+  if (!ctx) throw new Error('useChat debe usarse dentro de <ChatProvider>')
+  return ctx
+}

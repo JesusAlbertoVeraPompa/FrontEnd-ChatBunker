@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta de colores cyberpunk */
+  --color-pure-black: #000000;
+  --color-deep-grey: #0b0b0b;
+  --color-dark-surface: #111111;
+  --color-electric-cyan: #00f3ff;
+  --color-neon-violet: #bc00ff;
+  --color-acid-green: #39ff14;
+  --color-neon-pink: #ff0090;
+  --color-dark-cyan: rgba(0, 243, 255, 0.1);
+  --color-dark-violet: rgba(188, 0, 255, 0.1);
+
+  /* Tipografía */
+  --font-family-sans: Inter, sans-serif;
+  --font-family-mono: "Space Mono", monospace;
+
+  /* Animaciones */
+  --animate-glow-cyan: glow-cyan 2s ease-in-out infinite alternate;
+  --animate-glow-violet: glow-violet 2s ease-in-out infinite alternate;
+  --animate-pulse-slow: pulse 3s ease-in-out infinite;
+  --animate-slide-in: slide-in 0.3s ease-out;
+}
+
+@keyframes glow-cyan {
+  0%   { box-shadow: 0 0 4px rgba(0, 243, 255, 0.4), 0 0 8px rgba(0, 243, 255, 0.2); }
+  100% { box-shadow: 0 0 12px rgba(0, 243, 255, 0.8), 0 0 24px rgba(0, 243, 255, 0.5); }
+}
+
+@keyframes glow-violet {
+  0%   { box-shadow: 0 0 4px rgba(188, 0, 255, 0.4), 0 0 8px rgba(188, 0, 255, 0.2); }
+  100% { box-shadow: 0 0 12px rgba(188, 0, 255, 0.8), 0 0 24px rgba(188, 0, 255, 0.5); }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Variables CSS globales para uso en inline styles */
+:root {
+  --electric-cyan: #00f3ff;
+  --neon-violet: #bc00ff;
+  --acid-green: #39ff14;
+  --neon-pink: #ff0090;
+  --pure-black: #000000;
+  --deep-grey: #0b0b0b;
+  --dark-surface: #111111;
+  --surface-2: #161616;
+  --surface-3: #1e1e1e;
+
+  /* Sombras de neón */
+  --shadow-cyan: 0 0 8px rgba(0, 243, 255, 0.6), 0 0 16px rgba(0, 243, 255, 0.3);
+  --shadow-violet: 0 0 8px rgba(188, 0, 255, 0.6), 0 0 16px rgba(188, 0, 255, 0.3);
+  --shadow-green: 0 0 8px rgba(57, 255, 20, 0.6), 0 0 16px rgba(57, 255, 20, 0.3);
+  --shadow-pink: 0 0 8px rgba(255, 0, 144, 0.6), 0 0 16px rgba(255, 0, 144, 0.3);
+}
+
+/* Reset y base */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--pure-black);
+  color: #e0e0e0;
+  font-family: Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--deep-grey);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 243, 255, 0.3);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 243, 255, 0.6);
+}
+
+/* Utilidades de neón */
+.neon-border-cyan {
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(var(--dark-surface), var(--dark-surface)),
+    linear-gradient(135deg, var(--electric-cyan), var(--neon-violet));
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+}
+
+.neon-border-violet {
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(var(--dark-surface), var(--dark-surface)),
+    linear-gradient(135deg, var(--neon-violet), var(--neon-pink));
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+}
+
+.glow-cyan {
+  box-shadow: var(--shadow-cyan);
+}
+
+.glow-violet {
+  box-shadow: var(--shadow-violet);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.font-mono {
+  font-family: "Space Mono", monospace;
+}
