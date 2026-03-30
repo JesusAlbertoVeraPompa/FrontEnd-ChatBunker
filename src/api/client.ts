@@ -9,7 +9,8 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { TokenStorage } from '@/utils/storage'
 
-const BASE_URL = '/api/v1'
+const isProd = window.location.hostname !== 'localhost'
+const BASE_URL = isProd ? 'https://backend-chatbunker.onrender.com/api/v1' : '/api/v1'
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
