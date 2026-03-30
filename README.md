@@ -74,6 +74,6 @@ npm run dev
 
 ---
 
-## 🎨 Diseño Visual
+## 🎨 Diseño Visual - Cyberpunk
 *   **Paleta:** Negro profundo, Cyan Neón (#00f3ff) y Violeta Neón (#bc00ff).
 *   **Efectos:** Blur de fondo, bordes brillantes y animaciones de entrada/salida.
