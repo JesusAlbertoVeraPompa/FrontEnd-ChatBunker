@@ -1,6 +1,11 @@
-# 🛡️ ChatBunker — Frontend (Cyberpunk Security)
+# 🛡️ ChatBunker — Frontend (React - TypeScript - Tailwind)
 
 **ChatBunker** es la interfaz oficial de mensajería cifrada construida para máxima privacidad y seguridad. Este frontend implementa la capa de criptografía local necesaria para que el servidor nunca conozca el contenido de tus mensajes.
+
+---
+
+### 🌐 Muestra en VIVO
+🚀 **[Acceder a ChatBunker Web](https://jesusalbertoverapompa.github.io/FrontEnd-ChatBunker/)**
 
 ---
 
