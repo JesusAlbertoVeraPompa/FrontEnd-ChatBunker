@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { AuthTokens, LoginPayload, RegisterPayload, User } from '@/types'
+import type { AuthTokens, User } from '@/types'
 
 export const authApi = {
   socialLogin(accessToken: string, provider: 'google' | 'facebook') {

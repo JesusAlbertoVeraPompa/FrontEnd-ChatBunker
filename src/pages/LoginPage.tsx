@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ShieldCheck, Mail, Loader2 } from 'lucide-react'
+import { ShieldCheck, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 export default function LoginPage() {

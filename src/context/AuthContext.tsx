@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import type { ReactNode } from 'react'
 import { authApi, usersApi } from '@/api/auth'
 import { TokenStorage } from '@/utils/storage'
-import type { User, AuthTokens } from '@/types'
+import type { User } from '@/types'
 
 interface AuthContextValue {
   user: User | null
