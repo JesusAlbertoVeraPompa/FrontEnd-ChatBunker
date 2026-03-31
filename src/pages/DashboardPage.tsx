@@ -12,7 +12,7 @@ import ChatListItem from '@/components/ChatListItem'
 import MessageBubble from '@/components/MessageBubble'
 import MessageInput from '@/components/MessageInput'
 import NewChatModal from '@/components/NewChatModal'
-import type { Conversation, User as UserType } from '@/types'
+import type { Conversation } from '@/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DashboardPage: Layout principal de 3 columnas
@@ -94,7 +94,7 @@ export default function DashboardPage() {
       <NewChatModal
         isOpen={isNewChatOpen}
         onClose={() => setIsNewChatOpen(false)}
-        onSelectUser={handleCreateChat}
+        onInvitationSent={() => fetchInvitations()}
       />
 
       <AnimatePresence>
