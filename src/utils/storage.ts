@@ -17,9 +17,9 @@ export const TokenStorage = {
   setTokens(tokens: AuthTokens): void {
     accessToken = tokens.access
     try {
-      sessionStorage.setItem(REFRESH_KEY, tokens.refresh)
+      localStorage.setItem(REFRESH_KEY, tokens.refresh)
     } catch {
-      // sessionStorage no disponible (modo privado extremo)
+      // localStorage no disponible
     }
   },
 
@@ -29,7 +29,7 @@ export const TokenStorage = {
 
   getRefreshToken(): string | null {
     try {
-      return sessionStorage.getItem(REFRESH_KEY)
+      return localStorage.getItem(REFRESH_KEY)
     } catch {
       return null
     }
@@ -42,7 +42,7 @@ export const TokenStorage = {
   clearTokens(): void {
     accessToken = null
     try {
-      sessionStorage.removeItem(REFRESH_KEY)
+      localStorage.removeItem(REFRESH_KEY)
     } catch {
       // silencioso
     }

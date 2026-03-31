@@ -32,11 +32,30 @@ export default function DashboardPage() {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true)
   const [invitations, setInvitations] = useState<any[]>([])
+  const prevInvitationsCount = useRef(0)
+
+  // Sonido de notificación
+  const playPing = () => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3')
+      audio.volume = 0.5
+      audio.play()
+    } catch (err) {
+      console.warn('No se pudo reproducir el sonido:', err)
+    }
+  }
 
   const fetchInvitations = async () => {
     try {
-      const { data } = await chatApi.getInvitations()
-      setInvitations(data)
+      const { data: response } = await chatApi.getInvitations()
+      const list = (response as any).data || []
+      
+      // Si hay más invitaciones que antes, sonar el ping
+      if (list.length > prevInvitationsCount.current) {
+        playPing()
+      }
+      prevInvitationsCount.current = list.length
+      setInvitations(list)
     } catch (err) {
       console.error('Error cargando invitaciones:', err)
     }
@@ -44,14 +63,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchInvitations()
-    // Polling ligero para invitaciones cada 30s
-    const interval = setInterval(fetchInvitations, 30000)
+    // Polling más frecuente (5s) para sensación de tiempo real sin WS global
+    const interval = setInterval(fetchInvitations, 5000)
     return () => clearInterval(interval)
   }, [])
 
   const handleAcceptInvitation = async (id: string) => {
     try {
       await chatApi.acceptInvitation(id)
+      // Actualizar todo inmediatamente
       await Promise.all([refreshConversations(), fetchInvitations()])
     } catch (err) {
       console.error('Error aceptando invitación:', err)

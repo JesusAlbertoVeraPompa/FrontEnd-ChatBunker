@@ -140,6 +140,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
 
         if (msg.type === 'chat_message') {
+          // Sonido de mensaje entrante si no es mío
+          if (msg.sender !== user?.id) {
+            try {
+              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3')
+              audio.volume = 0.4
+              audio.play()
+            } catch (e) {}
+          }
+
           let decrypted = msg.content
           if (sharedKeyRef.current && isCiphertext(msg.content)) {
             try {

@@ -64,11 +64,12 @@ apiClient.interceptors.response.use(
     }
 
     try {
-      const { data } = await axios.post(`${BASE_URL}/auth/token/refresh/`, {
+      const { data: response } = await axios.post(`${BASE_URL}/auth/token/refresh/`, {
         refresh: refreshToken,
       })
 
-      const newAccess: string = data.access
+      // El backend devuelve { status: "success", data: { access: "..." } }
+      const newAccess: string = (response as any).data.access
       TokenStorage.setAccessToken(newAccess)
 
       // Resolver la cola de requests pendientes
