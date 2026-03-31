@@ -30,6 +30,7 @@ export default function DashboardPage() {
 
   const [isNewChatOpen, setIsNewChatOpen] = useState(false)
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true)
   const [invitations, setInvitations] = useState<any[]>([])
 
   const fetchInvitations = async () => {
@@ -85,10 +86,23 @@ export default function DashboardPage() {
       />
 
       {/* ── Centro: ventana de chat ────────────────────────────────────── */}
-      <ChatWindow />
+      <ChatWindow onToggleSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)} isSidebarOpen={isRightSidebarOpen} />
 
       {/* ── Sidebar derecho: settings ──────────────────────────────────── */}
-      <RightSidebar onLogoutClick={() => setIsLogoutConfirmOpen(true)} />
+      <AnimatePresence mode="popLayout">
+        {isRightSidebarOpen && (
+          <motion.div
+            key="right-sidebar"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 260, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            style={{ flexShrink: 0, overflow: 'hidden', background: '#0b0b0b' }}
+          >
+            <RightSidebar onLogoutClick={() => setIsLogoutConfirmOpen(true)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Modales ────────────────────────────────────────────────────── */}
       <NewChatModal
@@ -347,7 +361,13 @@ function LeftSidebar({
 // Ventana de Chat Central
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ChatWindow() {
+function ChatWindow({ 
+  onToggleSidebar, 
+  isSidebarOpen 
+}: { 
+  onToggleSidebar: () => void; 
+  isSidebarOpen: boolean 
+}) {
   const { user } = useAuth()
   const { activeConversation, messages, isLoadingMessages, isEncrypted, sendMessage, requestDelete } = useChat()
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -440,7 +460,15 @@ function ChatWindow() {
         <div style={{ display: 'flex', gap: 4 }}>
           <IconBtn><Phone size={16} /></IconBtn>
           <IconBtn><Video size={16} /></IconBtn>
-          <IconBtn><MoreVertical size={16} /></IconBtn>
+          <IconBtn 
+            onClick={onToggleSidebar}
+            style={{ 
+              color: isSidebarOpen ? '#00f3ff' : 'rgba(255,255,255,0.4)',
+              background: isSidebarOpen ? 'rgba(0, 243, 255, 0.08)' : 'none'
+            }}
+          >
+            <Settings2 size={16} />
+          </IconBtn>
         </div>
       </div>
 
