@@ -4,7 +4,7 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/',
+  base: '/FrontEnd-ChatBunker/',
   plugins: [react()],
   resolve: {
     alias: {
