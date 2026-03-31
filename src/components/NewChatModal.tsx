@@ -31,8 +31,9 @@ export default function NewChatModal({ isOpen, onClose, onInvitationSent }: NewC
     const timer = setTimeout(async () => {
       setIsLoading(true)
       try {
-        const { data } = await chatApi.searchUsers(query)
-        setResults(data)
+        const { data: response } = await chatApi.searchUsers(query)
+        // Extraemos la lista de la propiedad 'data' del envoltorio de éxito
+        setResults((response as any).data || [])
       } catch (err) {
         console.error('Error buscando usuarios:', err)
       } finally {

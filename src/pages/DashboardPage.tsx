@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Plus, MessageSquare, Settings2, Bell, ChevronRight,
-  LogOut, Shield, User, MoreVertical, Phone, Video, Lock
+  LogOut, Shield, User, Phone, Video, Lock
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useChat } from '@/context/ChatContext'
@@ -794,7 +794,7 @@ function SettingsActionItem({ label, isDanger }: { label: string; isDanger?: boo
 // Componentes de UI reutilizables
 // ─────────────────────────────────────────────────────────────────────────────
 
-function IconBtn({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+function IconBtn({ children, onClick, style }: { children: React.ReactNode; onClick?: () => void; style?: React.CSSProperties }) {
   return (
     <motion.button
       onClick={onClick}
@@ -809,6 +809,7 @@ function IconBtn({ children, onClick }: { children: React.ReactNode; onClick?: (
         display: 'flex',
         alignItems: 'center',
         transition: 'color 0.2s, background 0.2s',
+        ...style
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLButtonElement
