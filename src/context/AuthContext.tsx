@@ -27,11 +27,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       try {
-        const { data } = await authApi.refreshToken(refreshToken)
-        TokenStorage.setAccessToken(data.access)
-        const { data: me } = await usersApi.me()
-        setUser(me)
-      } catch {
+        const { data: response } = await authApi.refreshToken(refreshToken)
+        // Extraer access del formato envuelto
+        const newAccess = (response as any).data.access
+        TokenStorage.setAccessToken(newAccess)
+        
+        const { data: userResponse } = await usersApi.me()
+        // Extraer user del formato envuelto
+        setUser((userResponse as any).data)
+      } catch (err) {
+        console.error('Error restaurando sesión:', err)
         TokenStorage.clearTokens()
       } finally {
         setIsLoading(false)
