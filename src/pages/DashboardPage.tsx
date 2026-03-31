@@ -30,20 +30,30 @@ export default function DashboardPage() {
 
   const [isNewChatOpen, setIsNewChatOpen] = useState(false)
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+  const [invitations, setInvitations] = useState<any[]>([])
 
-  const handleCreateChat = async (targetUser: UserType) => {
+  const fetchInvitations = async () => {
     try {
-      const { data: newConv } = await chatApi.createConversation(targetUser.id)
-      await refreshConversations()
-      // Enriquecer la conversación para que tenga el 'contact' (necesario para selectConversation)
-      const enriched = {
-        ...newConv,
-        contact: newConv.participants.find((p) => p.id !== user?.id) ?? newConv.participants[0],
-      }
-      selectConversation(enriched)
-      setIsNewChatOpen(false)
+      const { data } = await chatApi.getInvitations()
+      setInvitations(data)
     } catch (err) {
-      console.error('Error al crear conversación:', err)
+      console.error('Error cargando invitaciones:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchInvitations()
+    // Polling ligero para invitaciones cada 30s
+    const interval = setInterval(fetchInvitations, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const handleAcceptInvitation = async (id: string) => {
+    try {
+      await chatApi.acceptInvitation(id)
+      await Promise.all([refreshConversations(), fetchInvitations()])
+    } catch (err) {
+      console.error('Error aceptando invitación:', err)
     }
   }
 
@@ -70,6 +80,8 @@ export default function DashboardPage() {
         currentUserId={user?.id ?? ''}
         isLoading={isLoadingConversations}
         onNewChat={() => setIsNewChatOpen(true)}
+        invitations={invitations}
+        onAcceptInvitation={handleAcceptInvitation}
       />
 
       {/* ── Centro: ventana de chat ────────────────────────────────────── */}
@@ -188,6 +200,8 @@ function LeftSidebar({
   currentUserId,
   isLoading,
   onNewChat,
+  invitations,
+  onAcceptInvitation,
 }: {
   conversations: Conversation[]
   activeConversation: Conversation | null
@@ -195,6 +209,8 @@ function LeftSidebar({
   currentUserId: string
   isLoading: boolean
   onNewChat: () => void
+  invitations: any[]
+  onAcceptInvitation: (id: string) => void
 }) {
   return (
     <div
@@ -229,7 +245,6 @@ function LeftSidebar({
             CHATBUNKER
           </span>
           <div style={{ display: 'flex', gap: 4 }}>
-            <IconBtn><Search size={16} /></IconBtn>
             <IconBtn onClick={onNewChat}><Plus size={16} /></IconBtn>
           </div>
         </div>
@@ -262,13 +277,37 @@ function LeftSidebar({
         </div>
       </div>
 
+      {/* Invitaciones Pendientes */}
+      {invitations.length > 0 && (
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(0, 243, 255, 0.1)' }}>
+          <p style={{ margin: '0 0 10px', fontSize: 10, color: '#00f3ff', fontFamily: 'Space Mono', letterSpacing: '0.1em' }}>SOLICITUDES PENDIENTES</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {invitations.map((inv) => (
+              <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(0, 243, 255, 0.03)', padding: 8, borderRadius: 8, border: '1px solid rgba(0, 243, 255, 0.1)' }}>
+                <Avatar name={inv.sender.full_name} size="sm" />
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: '#e0e0e0' }}>{inv.sender.full_name}</p>
+                  <p style={{ margin: 0, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>Quiere conectar</p>
+                </div>
+                <button 
+                  onClick={() => onAcceptInvitation(inv.id)}
+                  style={{ background: '#00f3ff', border: 'none', borderRadius: 4, padding: '4px 8px', color: '#000', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  ACEPTAR
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Lista de chats */}
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: 4 }}>
         {isLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
             <NeonSpinner color="#00f3ff" />
           </div>
-        ) : conversations.length === 0 ? (
+        ) : (conversations.length === 0 && invitations.length === 0) ? (
           <div
             style={{
               textAlign: 'center',

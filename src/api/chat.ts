@@ -10,6 +10,18 @@ export const chatApi = {
     return apiClient.post<Conversation>('/chat/conversations/', { user_id: userId })
   },
 
+  getInvitations() {
+    return apiClient.get<any[]>('/chat/invitations/')
+  },
+
+  sendInvitation(email: string) {
+    return apiClient.post('/chat/invitations/', { email })
+  },
+
+  acceptInvitation(invitationId: string) {
+    return apiClient.post<Conversation>(`/chat/invitations/${invitationId}/accept/`)
+  },
+
   getChatHistory(conversationId: string) {
     return apiClient.get<Message[]>(`/chat/conversations/${conversationId}/history/`)
   },

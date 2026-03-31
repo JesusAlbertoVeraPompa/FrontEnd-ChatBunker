@@ -12,13 +12,14 @@ import Avatar from './Avatar'
 interface NewChatModalProps {
   isOpen: boolean
   onClose: () => void
-  onSelectUser: (user: User) => void
+  onInvitationSent: () => void
 }
 
-export default function NewChatModal({ isOpen, onClose, onSelectUser }: NewChatModalProps) {
+export default function NewChatModal({ isOpen, onClose, onInvitationSent }: NewChatModalProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isSending, setIsSending] = useState<string | null>(null)
 
   // Búsqueda con debounce simple
   useEffect(() => {
@@ -41,6 +42,21 @@ export default function NewChatModal({ isOpen, onClose, onSelectUser }: NewChatM
 
     return () => clearTimeout(timer)
   }, [query])
+
+  const handleSendInvitation = async (email: string) => {
+    setIsSending(email)
+    try {
+      await chatApi.sendInvitation(email)
+      onInvitationSent()
+      onClose()
+      setQuery('')
+    } catch (err: any) {
+      console.error('Error enviando invitación:', err)
+      alert(err?.response?.data?.error ?? 'No se pudo enviar la invitación.')
+    } finally {
+      setIsSending(null)
+    }
+  }
 
   if (!isOpen) return null
 
@@ -172,7 +188,8 @@ export default function NewChatModal({ isOpen, onClose, onSelectUser }: NewChatM
                 results.map((user) => (
                   <button
                     key={user.id}
-                    onClick={() => onSelectUser(user)}
+                    onClick={() => handleSendInvitation(user.email)}
+                    disabled={!!isSending}
                     style={{
                       width: '100%',
                       display: 'flex',
@@ -182,11 +199,12 @@ export default function NewChatModal({ isOpen, onClose, onSelectUser }: NewChatM
                       background: 'transparent',
                       border: 'none',
                       borderRadius: 10,
-                      cursor: 'pointer',
+                      cursor: isSending ? 'default' : 'pointer',
                       textAlign: 'left',
                       transition: 'background 0.2s',
+                      opacity: isSending === user.email ? 0.6 : 1
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0, 243, 255, 0.05)')}
+                    onMouseEnter={(e) => !isSending && (e.currentTarget.style.background = 'rgba(0, 243, 255, 0.05)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <Avatar name={user.full_name} size="sm" />
@@ -198,7 +216,11 @@ export default function NewChatModal({ isOpen, onClose, onSelectUser }: NewChatM
                         {user.email}
                       </p>
                     </div>
-                    <UserPlus size={16} color="#00f3ff" style={{ opacity: 0.6 }} />
+                    {isSending === user.email ? (
+                      <Loader2 size={16} className="animate-spin" color="#00f3ff" />
+                    ) : (
+                      <UserPlus size={16} color="#00f3ff" style={{ opacity: 0.6 }} />
+                    )}
                   </button>
                 ))
               ) : query.length >= 3 && !isLoading ? (
