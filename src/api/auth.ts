@@ -3,7 +3,10 @@ import type { AuthTokens, User } from '@/types'
 
 export const authApi = {
   socialLogin(accessToken: string, provider: 'google' | 'facebook') {
-    return apiClient.post<AuthTokens>(`/auth/${provider}/`, { access_token: accessToken })
+    return apiClient.post<AuthTokens>(`/auth/${provider}/`, { 
+      access_token: accessToken,
+      provider: provider 
+    })
   },
 
   logout(refresh: string) {
