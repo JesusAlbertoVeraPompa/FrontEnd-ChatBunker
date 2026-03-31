@@ -59,7 +59,7 @@ apiClient.interceptors.response.use(
     if (!refreshToken) {
       isRefreshing = false
       TokenStorage.clearTokens()
-      window.location.href = '/login'
+      window.location.hash = '/login'
       return Promise.reject(error)
     }
 
@@ -80,7 +80,7 @@ apiClient.interceptors.response.use(
     } catch {
       TokenStorage.clearTokens()
       refreshQueue = []
-      window.location.href = '/login'
+      window.location.hash = '/login'
       return Promise.reject(error)
     } finally {
       isRefreshing = false

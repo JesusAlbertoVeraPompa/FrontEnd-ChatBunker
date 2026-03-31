@@ -1,8 +1,10 @@
 {
-  "name": "frontend-react",
+  "name": "frontend-chatbunker",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://jesusalbertoverapompa.github.io/FrontEnd-ChatBunker/",
   "type": "module",
+
   "scripts": {
     "dev": "vite",
     "predeploy": "npm run build",
