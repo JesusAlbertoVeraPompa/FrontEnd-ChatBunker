@@ -19,7 +19,7 @@ import type { Conversation, User as UserType } from '@/types'
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { 
     conversations, 
     activeConversation, 
@@ -29,6 +29,7 @@ export default function DashboardPage() {
   } = useChat()
 
   const [isNewChatOpen, setIsNewChatOpen] = useState(false)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
 
   const handleCreateChat = async (targetUser: UserType) => {
     try {
@@ -44,6 +45,11 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Error al crear conversación:', err)
     }
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    setIsLogoutConfirmOpen(false)
   }
 
   return (
@@ -70,7 +76,7 @@ export default function DashboardPage() {
       <ChatWindow />
 
       {/* ── Sidebar derecho: settings ──────────────────────────────────── */}
-      <RightSidebar />
+      <RightSidebar onLogoutClick={() => setIsLogoutConfirmOpen(true)} />
 
       {/* ── Modales ────────────────────────────────────────────────────── */}
       <NewChatModal
@@ -78,6 +84,95 @@ export default function DashboardPage() {
         onClose={() => setIsNewChatOpen(false)}
         onSelectUser={handleCreateChat}
       />
+
+      <AnimatePresence>
+        {isLogoutConfirmOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{
+                width: '100%',
+                maxWidth: 340,
+                background: '#0b0b0b',
+                border: '1px solid rgba(255, 60, 60, 0.3)',
+                borderRadius: 20,
+                padding: '32px 24px',
+                textAlign: 'center',
+                boxShadow: '0 0 40px rgba(255, 60, 60, 0.1)',
+              }}
+            >
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  background: 'rgba(255, 60, 60, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px',
+                }}
+              >
+                <LogOut size={24} color="#ff6060" />
+              </div>
+              <h3 style={{ margin: '0 0 12px', color: '#fff', fontSize: 18, fontWeight: 600 }}>
+                ¿Cerrar Sesión?
+              </h3>
+              <p style={{ margin: '0 0 28px', color: 'rgba(255,255,255,0.4)', fontSize: 13, lineHeight: 1.5 }}>
+                Estás a punto de abandonar el Bunker. Tendrás que volver a autenticarte para acceder a tus mensajes.
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setIsLogoutConfirmOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px 0',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 12,
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    flex: 1,
+                    padding: '12px 0',
+                    background: '#ff6060',
+                    border: 'none',
+                    borderRadius: 12,
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Abandonar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -372,10 +467,143 @@ function ChatWindow() {
 // Sidebar Derecho (Settings / Perfil)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function RightSidebar() {
-  const { user, logout } = useAuth()
+function RightSidebar({ onLogoutClick }: { onLogoutClick: () => void }) {
+  const { user } = useAuth()
+  const [activeView, setActiveView] = useState<'menu' | 'profile' | 'notifications' | 'privacy' | 'settings'>('menu')
 
   const name = user?.full_name || user?.email || 'Cypher_Dev'
+
+  const renderContent = () => {
+    switch (activeView) {
+      case 'profile':
+        return (
+          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} style={{ padding: 20 }}>
+            <h4 style={{ color: '#bc00ff', fontSize: 12, marginBottom: 16, fontFamily: 'Space Mono' }}>DATOS PERSONALES</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <ProfileItem label="Email" value={user?.email ?? ''} />
+              <ProfileItem label="Nombre" value={user?.full_name ?? ''} isEditable />
+              <ProfileItem label="Teléfono" value={user?.phone_number ?? 'No registrado'} isEditable />
+              <ProfileItem label="Rol" value={user?.role ?? 'Usuario'} />
+            </div>
+            <button 
+              onClick={() => setActiveView('menu')}
+              style={{ marginTop: 24, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12 }}
+            >
+              ← Volver al menú
+            </button>
+          </motion.div>
+        )
+      case 'notifications':
+        return (
+          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} style={{ padding: 20 }}>
+            <h4 style={{ color: '#00f3ff', fontSize: 12, marginBottom: 16, fontFamily: 'Space Mono' }}>NOTIFICACIONES</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <ToggleItem label="Sonidos de mensaje" defaultChecked />
+              <ToggleItem label="Notificaciones de escritorio" />
+              <ToggleItem label="Vista previa en banner" defaultChecked />
+            </div>
+            <button 
+              onClick={() => setActiveView('menu')}
+              style={{ marginTop: 24, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12 }}
+            >
+              ← Volver al menú
+            </button>
+          </motion.div>
+        )
+      case 'privacy':
+        return (
+          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} style={{ padding: 20 }}>
+            <h4 style={{ color: '#39ff14', fontSize: 12, marginBottom: 16, fontFamily: 'Space Mono' }}>SEGURIDAD E2EE</h4>
+            <div style={{ background: 'rgba(57, 255, 20, 0.05)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+              <p style={{ margin: 0, fontSize: 11, color: '#39ff14', lineHeight: 1.4 }}>
+                Tus mensajes están protegidos por el protocolo Double Ratchet. Las llaves se almacenan localmente.
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>ID DE DISPOSITIVO:</p>
+              <code style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', background: '#1a1a1a', padding: 8, borderRadius: 6, wordBreak: 'break-all' }}>
+                BUNKER-NODE-{user?.id.slice(0, 18).toUpperCase()}
+              </code>
+            </div>
+            <button 
+              onClick={() => setActiveView('menu')}
+              style={{ marginTop: 24, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12 }}
+            >
+              ← Volver al menú
+            </button>
+          </motion.div>
+        )
+      case 'settings':
+        return (
+          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} style={{ padding: 20 }}>
+            <h4 style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 16, fontFamily: 'Space Mono' }}>AJUSTES GENERALES</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <SettingsActionItem label="Cambiar Contraseña" />
+              <SettingsActionItem label="Sesiones Activas" />
+              <SettingsActionItem label="Exportar Claves" />
+              <SettingsActionItem label="Eliminar Cuenta" isDanger />
+            </div>
+            <button 
+              onClick={() => setActiveView('menu')}
+              style={{ marginTop: 24, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12 }}
+            >
+              ← Volver al menú
+            </button>
+          </motion.div>
+        )
+      default:
+        return (
+          <>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: '28px 16px 20px',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                gap: 10,
+              }}
+            >
+              <div style={{ position: 'relative' }}>
+                <Avatar name={name} size="lg" color="violet" />
+                <motion.div
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  style={{
+                    position: 'absolute',
+                    inset: -4,
+                    borderRadius: '50%',
+                    border: '1px solid rgba(188, 0, 255, 0.4)',
+                    pointerEvents: 'none',
+                  }}
+                />
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#e0e0e0', fontFamily: '"Space Mono", monospace' }}>
+                  {name}
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: 11, color: '#bc00ff', fontFamily: '"Space Mono", monospace', letterSpacing: '0.15em' }}>
+                  {user?.role?.toUpperCase() ?? 'USUARIO'}
+                </p>
+
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, background: 'rgba(57, 255, 20, 0.08)', border: '1px solid rgba(57, 255, 20, 0.3)', borderRadius: 20, padding: '3px 10px' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 6px rgba(57, 255, 20, 0.8)', display: 'inline-block' }} />
+                  <span style={{ fontSize: 10, color: '#39ff14', fontFamily: '"Space Mono", monospace' }}>Online</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, padding: '8px 0' }}>
+              <SettingsMenuItem icon={<User size={15} />} label="Perfil" onClick={() => setActiveView('profile')} />
+              <SettingsMenuItem icon={<Bell size={15} />} label="Notificaciones" onClick={() => setActiveView('notifications')} />
+              <SettingsMenuItem icon={<Lock size={15} />} label="Privacidad" onClick={() => setActiveView('privacy')} />
+              <SettingsMenuItem icon={<Settings2 size={15} />} label="Ajustes" onClick={() => setActiveView('settings')} />
+            </div>
+          </>
+        )
+    }
+  }
 
   return (
     <div
@@ -406,109 +634,17 @@ function RightSidebar() {
             color: 'rgba(188, 0, 255, 0.8)',
           }}
         >
-          PERFIL
+          {activeView === 'menu' ? 'BUNKER CORE' : activeView.toUpperCase()}
         </span>
-        <IconBtn><Settings2 size={15} /></IconBtn>
+        <IconBtn onClick={() => setActiveView('menu')}><Settings2 size={15} /></IconBtn>
       </div>
 
-      {/* Avatar de perfil */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '28px 16px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
-          gap: 10,
-        }}
-      >
-        <div style={{ position: 'relative' }}>
-          <Avatar name={name} size="lg" color="violet" />
-          <motion.div
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            style={{
-              position: 'absolute',
-              inset: -4,
-              borderRadius: '50%',
-              border: '1px solid rgba(188, 0, 255, 0.4)',
-              pointerEvents: 'none',
-            }}
-          />
-        </div>
-
-        <div style={{ textAlign: 'center' }}>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 15,
-              fontWeight: 700,
-              color: '#e0e0e0',
-              fontFamily: '"Space Mono", monospace',
-            }}
-          >
-            {name}
-          </p>
-          <p
-            style={{
-              margin: '4px 0 0',
-              fontSize: 11,
-              color: '#bc00ff',
-              fontFamily: '"Space Mono", monospace',
-              letterSpacing: '0.15em',
-            }}
-          >
-            {user?.role?.toUpperCase() ?? 'USUARIO'}
-          </p>
-
-          {/* Indicador online */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              marginTop: 8,
-              background: 'rgba(57, 255, 20, 0.08)',
-              border: '1px solid rgba(57, 255, 20, 0.3)',
-              borderRadius: 20,
-              padding: '3px 10px',
-            }}
-          >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: '#39ff14',
-                boxShadow: '0 0 6px rgba(57, 255, 20, 0.8)',
-                display: 'inline-block',
-              }}
-            />
-            <span
-              style={{
-                fontSize: 10,
-                color: '#39ff14',
-                fontFamily: '"Space Mono", monospace',
-              }}
-            >
-              Online
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Menú */}
-      <div style={{ flex: 1, padding: '8px 0' }}>
-        <SettingsMenuItem icon={<User size={15} />} label="Perfil" />
-        <SettingsMenuItem icon={<Bell size={15} />} label="Notificaciones" />
-        <SettingsMenuItem icon={<Lock size={15} />} label="Privacidad" />
-        <SettingsMenuItem icon={<Settings2 size={15} />} label="Ajustes" />
-      </div>
+      {renderContent()}
 
       {/* Logout */}
       <div style={{ padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <motion.button
-          onClick={logout}
+          onClick={onLogoutClick}
           whileTap={{ scale: 0.97 }}
           style={{
             width: '100%',
@@ -532,6 +668,58 @@ function RightSidebar() {
         </motion.button>
       </div>
     </div>
+  )
+}
+
+// ─── Sub-componentes para vistas de ajustes ──────────────────────────────────
+
+function ProfileItem({ label, value, isEditable }: { label: string; value: string; isEditable?: boolean }) {
+  return (
+    <div>
+      <p style={{ margin: '0 0 4px', fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>{label}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ margin: 0, fontSize: 13, color: '#fff' }}>{value}</p>
+        {isEditable && (
+          <button style={{ background: 'none', border: 'none', color: '#bc00ff', fontSize: 11, cursor: 'pointer' }}>Editar</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ToggleItem({ label, defaultChecked }: { label: string; defaultChecked?: boolean }) {
+  const [checked, setChecked] = useState(defaultChecked)
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{label}</span>
+      <button 
+        onClick={() => setChecked(!checked)}
+        style={{
+          width: 32, height: 16, borderRadius: 10,
+          background: checked ? '#00f3ff' : 'rgba(255,255,255,0.1)',
+          border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s'
+        }}
+      >
+        <motion.div 
+          animate={{ x: checked ? 16 : 2 }}
+          style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2 }}
+        />
+      </button>
+    </div>
+  )
+}
+
+function SettingsActionItem({ label, isDanger }: { label: string; isDanger?: boolean }) {
+  return (
+    <button
+      style={{
+        width: '100%', textAlign: 'left', padding: '10px 0', background: 'none', border: 'none',
+        borderBottom: '1px solid rgba(255,255,255,0.05)', color: isDanger ? '#ff6060' : 'rgba(255,255,255,0.7)',
+        fontSize: 13, cursor: 'pointer'
+      }}
+    >
+      {label}
+    </button>
   )
 }
 
@@ -571,9 +759,10 @@ function IconBtn({ children, onClick }: { children: React.ReactNode; onClick?: (
   )
 }
 
-function SettingsMenuItem({ icon, label }: { icon: React.ReactNode; label: string }) {
+function SettingsMenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
   return (
     <motion.button
+      onClick={onClick}
       whileTap={{ scale: 0.98 }}
       style={{
         width: '100%',
