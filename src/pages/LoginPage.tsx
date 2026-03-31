@@ -11,7 +11,6 @@ export default function LoginPage() {
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      console.log('Google login success response:', tokenResponse)
       if (!tokenResponse?.access_token) {
         setError('Google no devolvió un token de acceso válido.')
         return

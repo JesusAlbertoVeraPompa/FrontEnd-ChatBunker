@@ -26,6 +26,10 @@ export const chatApi = {
     return apiClient.get<Message[]>(`/chat/conversations/${conversationId}/history/`)
   },
 
+  deleteConversation(conversationId: string) {
+    return apiClient.delete(`/chat/conversations/${conversationId}/history/`)
+  },
+
   searchUsers(query: string) {
     return apiClient.get<User[]>(`/users/search/?q=${query}`)
   },

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Plus, MessageSquare, Settings2, Bell, ChevronRight,
-  LogOut, Shield, User, Phone, Video, Lock
+  LogOut, Shield, User, Phone, Video, Lock, Trash2
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useChat } from '@/context/ChatContext'
@@ -78,6 +78,19 @@ export default function DashboardPage() {
     }
   }
 
+  const handleDeleteChat = async () => {
+    if (!activeConversation) return
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta conversación permanentemente?')) return
+    
+    try {
+      await chatApi.deleteConversation(activeConversation.id)
+      selectConversation(null as any)
+      await refreshConversations()
+    } catch (err) {
+      console.error('Error al eliminar conversación:', err)
+    }
+  }
+
   const handleLogout = async () => {
     await logout()
     setIsLogoutConfirmOpen(false)
@@ -103,10 +116,12 @@ export default function DashboardPage() {
         onNewChat={() => setIsNewChatOpen(true)}
         invitations={invitations}
         onAcceptInvitation={handleAcceptInvitation}
+        onToggleSettings={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+        isSettingsOpen={isRightSidebarOpen}
       />
 
       {/* ── Centro: ventana de chat ────────────────────────────────────── */}
-      <ChatWindow onToggleSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)} isSidebarOpen={isRightSidebarOpen} />
+      <ChatWindow onDeleteChat={handleDeleteChat} />
 
       {/* ── Sidebar derecho: settings ──────────────────────────────────── */}
       <AnimatePresence mode="popLayout">
@@ -236,6 +251,8 @@ function LeftSidebar({
   onNewChat,
   invitations,
   onAcceptInvitation,
+  onToggleSettings,
+  isSettingsOpen,
 }: {
   conversations: Conversation[]
   activeConversation: Conversation | null
@@ -245,6 +262,8 @@ function LeftSidebar({
   onNewChat: () => void
   invitations: any[]
   onAcceptInvitation: (id: string) => void
+  onToggleSettings: () => void
+  isSettingsOpen: boolean
 }) {
   return (
     <div
@@ -279,6 +298,12 @@ function LeftSidebar({
             CHATBUNKER
           </span>
           <div style={{ display: 'flex', gap: 4 }}>
+            <IconBtn 
+              onClick={onToggleSettings}
+              style={{ color: isSettingsOpen ? '#bc00ff' : 'rgba(255,255,255,0.4)', background: isSettingsOpen ? 'rgba(188, 0, 255, 0.08)' : 'none' }}
+            >
+              <Settings2 size={16} />
+            </IconBtn>
             <IconBtn onClick={onNewChat}><Plus size={16} /></IconBtn>
           </div>
         </div>
@@ -382,11 +407,9 @@ function LeftSidebar({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ChatWindow({ 
-  onToggleSidebar, 
-  isSidebarOpen 
+  onDeleteChat 
 }: { 
-  onToggleSidebar: () => void; 
-  isSidebarOpen: boolean 
+  onDeleteChat: () => void; 
 }) {
   const { user } = useAuth()
   const { activeConversation, messages, isLoadingMessages, isEncrypted, sendMessage, requestDelete } = useChat()
@@ -481,13 +504,10 @@ function ChatWindow({
           <IconBtn><Phone size={16} /></IconBtn>
           <IconBtn><Video size={16} /></IconBtn>
           <IconBtn 
-            onClick={onToggleSidebar}
-            style={{ 
-              color: isSidebarOpen ? '#00f3ff' : 'rgba(255,255,255,0.4)',
-              background: isSidebarOpen ? 'rgba(0, 243, 255, 0.08)' : 'none'
-            }}
+            onClick={onDeleteChat}
+            style={{ color: 'rgba(255, 60, 60, 0.6)' }}
           >
-            <Settings2 size={16} />
+            <Trash2 size={16} />
           </IconBtn>
         </div>
       </div>
