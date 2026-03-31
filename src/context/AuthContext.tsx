@@ -41,10 +41,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const socialLogin = useCallback(async (accessToken: string, provider: 'google' | 'facebook') => {
-    const { data: tokens } = await authApi.socialLogin(accessToken, provider)
-    TokenStorage.setTokens(tokens)
-    const { data: me } = await usersApi.me()
-    setUser(me)
+    // La respuesta del backend es: { status: "success", message: "...", data: { tokens: { ... }, user: { ... } } }
+    const { data: response } = await authApi.socialLogin(accessToken, provider)
+    
+    // Extraemos los tokens de data.tokens dentro del cuerpo de la respuesta (response.data)
+    const backendData = (response as any).data
+    if (backendData?.tokens) {
+      TokenStorage.setTokens(backendData.tokens)
+      // Usamos los datos del usuario que ya vienen en la respuesta para no hacer otra petición
+      setUser(backendData.user)
+    }
   }, [])
 
   const logout = useCallback(async () => {
