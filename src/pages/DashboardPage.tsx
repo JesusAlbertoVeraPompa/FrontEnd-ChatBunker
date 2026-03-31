@@ -30,6 +30,7 @@ export default function DashboardPage() {
 
   const [isNewChatOpen, setIsNewChatOpen] = useState(false)
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true)
   const [invitations, setInvitations] = useState<any[]>([])
   const prevInvitationsCount = useRef(0)
@@ -80,12 +81,12 @@ export default function DashboardPage() {
 
   const handleDeleteChat = async () => {
     if (!activeConversation) return
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta conversación permanentemente?')) return
     
     try {
       await chatApi.deleteConversation(activeConversation.id)
       selectConversation(null as any)
       await refreshConversations()
+      setIsDeleteConfirmOpen(false)
     } catch (err) {
       console.error('Error al eliminar conversación:', err)
     }
@@ -121,7 +122,7 @@ export default function DashboardPage() {
       />
 
       {/* ── Centro: ventana de chat ────────────────────────────────────── */}
-      <ChatWindow onDeleteChat={handleDeleteChat} />
+      <ChatWindow onDeleteChat={() => setIsDeleteConfirmOpen(true)} />
 
       {/* ── Sidebar derecho: settings ──────────────────────────────────── */}
       <AnimatePresence mode="popLayout">
@@ -147,6 +148,94 @@ export default function DashboardPage() {
       />
 
       <AnimatePresence>
+        {/* Modal de Borrado de Chat */}
+        {isDeleteConfirmOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{
+                width: '100%',
+                maxWidth: 340,
+                background: '#0b0b0b',
+                border: '1px solid rgba(255, 60, 60, 0.3)',
+                borderRadius: 20,
+                padding: '32px 24px',
+                textAlign: 'center',
+                boxShadow: '0 0 40px rgba(255, 60, 60, 0.1)',
+              }}
+            >
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  background: 'rgba(255, 60, 60, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px',
+                }}
+              >
+                <Trash2 size={24} color="#ff6060" />
+              </div>
+              <h3 style={{ margin: '0 0 12px', color: '#fff', fontSize: 18, fontWeight: 600 }}>
+                ¿Eliminar Conversación?
+              </h3>
+              <p style={{ margin: '0 0 28px', color: 'rgba(255,255,255,0.4)', fontSize: 13, lineHeight: 1.5 }}>
+                Esta acción es irreversible. Se borrarán todos los mensajes cifrados de este bunker para ambos participantes.
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setIsDeleteConfirmOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px 0',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 12,
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteChat}
+                  style={{
+                    flex: 1,
+                    padding: '12px 0',
+                    background: '#ff6060',
+                    border: 'none',
+                    borderRadius: 12,
+                    color: '#fff',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Confirmar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {isLogoutConfirmOpen && (
           <div
             style={{

@@ -99,12 +99,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       // Abrir WebSocket
       const accessToken = TokenStorage.getAccessToken()
-      if (!accessToken) return
+      if (!accessToken) {
+        console.error('[WS] No hay access token')
+        return
+      }
 
-      const ws = new WebSocket(buildWSUrl(conv.id, accessToken))
+      const wsUrl = buildWSUrl(conv.id, accessToken)
+      console.log('[WS] Conectando a:', wsUrl)
+      
+      const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = async () => {
+        console.log('[WS] Conexión abierta')
         // Generar par de claves para esta sesión y enviar clave pública
         const kp = await generateKeyPair()
         keyPairRef.current = kp
@@ -113,6 +120,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       ws.onmessage = async (event: MessageEvent) => {
         const msg: WSIncoming = JSON.parse(event.data as string)
+        console.log('[WS] Mensaje recibido:', msg.type)
 
         if (msg.type === 'relay_key' && keyPairRef.current) {
           // Recibir clave del partner y derivar secreto compartido
@@ -191,8 +199,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      ws.onerror = () => {
-        // Reconectar tras error podría implementarse aquí
+      ws.onerror = (err) => {
+        console.error('[WS] Error en la conexión:', err)
+      }
+
+      ws.onclose = (event) => {
+        console.warn('[WS] Conexión cerrada:', event.code, event.reason)
+        // Intentar reconectar solo si la conversación sigue activa y no fue un cierre intencional
+        if (wsRef.current === ws) {
+          console.log('[WS] Reintentando conexión en 3 segundos...')
+          setTimeout(() => {
+            if (activeConversation?.id === conv.id) selectConversation(conv)
+          }, 3000)
+        }
       }
     },
     [activeConversation?.id, closeWS, user?.id]
