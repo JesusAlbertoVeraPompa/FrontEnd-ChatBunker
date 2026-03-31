@@ -12,7 +12,20 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/FrontEnd-ChatBunker/assets/index-BNfNlRnk.js"></script>
+    <script type="text/javascript">
+      // Redirección de GitHub Pages para manejar rutas profundas
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+    <script type="module" crossorigin src="/FrontEnd-ChatBunker/assets/index-BiRajoWN.js"></script>
     <link rel="stylesheet" crossorigin href="/FrontEnd-ChatBunker/assets/index-BJydPnps.css">
   </head>
   <body>
