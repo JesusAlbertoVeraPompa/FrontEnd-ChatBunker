@@ -22,6 +22,10 @@ export const chatApi = {
     return apiClient.post<Conversation>(`/chat/invitations/${invitationId}/accept/`)
   },
 
+  rejectInvitation(invitationId: string) {
+    return apiClient.post(`/chat/invitations/${invitationId}/reject/`)
+  },
+
   getChatHistory(conversationId: string) {
     return apiClient.get<Message[]>(`/chat/conversations/${conversationId}/history/`)
   },

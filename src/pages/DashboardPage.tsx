@@ -79,6 +79,15 @@ export default function DashboardPage() {
     }
   }
 
+  const handleRejectInvitation = async (id: string) => {
+    try {
+      await chatApi.rejectInvitation(id)
+      await fetchInvitations()
+    } catch (err) {
+      console.error('Error rechazando invitación:', err)
+    }
+  }
+
   const handleDeleteChat = async () => {
     if (!activeConversation) return
     
@@ -117,6 +126,7 @@ export default function DashboardPage() {
         onNewChat={() => setIsNewChatOpen(true)}
         invitations={invitations}
         onAcceptInvitation={handleAcceptInvitation}
+        onRejectInvitation={handleRejectInvitation}
         onToggleSettings={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
         isSettingsOpen={isRightSidebarOpen}
       />
@@ -340,6 +350,7 @@ function LeftSidebar({
   onNewChat,
   invitations,
   onAcceptInvitation,
+  onRejectInvitation,
   onToggleSettings,
   isSettingsOpen,
 }: {
@@ -351,6 +362,7 @@ function LeftSidebar({
   onNewChat: () => void
   invitations: any[]
   onAcceptInvitation: (id: string) => void
+  onRejectInvitation: (id: string) => void
   onToggleSettings: () => void
   isSettingsOpen: boolean
 }) {
@@ -437,12 +449,20 @@ function LeftSidebar({
                   <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: '#e0e0e0' }}>{inv.sender.full_name}</p>
                   <p style={{ margin: 0, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>Quiere conectar</p>
                 </div>
-                <button 
-                  onClick={() => onAcceptInvitation(inv.id)}
-                  style={{ background: '#00f3ff', border: 'none', borderRadius: 4, padding: '4px 8px', color: '#000', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  ACEPTAR
-                </button>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button 
+                    onClick={() => onAcceptInvitation(inv.id)}
+                    style={{ background: '#00f3ff', border: 'none', borderRadius: 4, padding: '4px 8px', color: '#000', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ACEPTAR
+                  </button>
+                  <button 
+                    onClick={() => onRejectInvitation(inv.id)}
+                    style={{ background: 'rgba(255, 60, 60, 0.2)', border: '1px solid #ff606040', borderRadius: 4, padding: '4px 8px', color: '#ff6060', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    RECHAZAR
+                  </button>
+                </div>
               </div>
             ))}
           </div>

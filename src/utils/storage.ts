@@ -1,66 +1,37 @@
 /**
- * storage.ts - Manejo seguro de tokens JWT en memoria.
- *
- * Los tokens se guardan en variables de modulo (no localStorage/sessionStorage)
- * para reducir exposicion ante XSS. El refresh token persiste solo en
- * sessionStorage para sobrevivir recargas dentro de la misma pestana/sesion.
+ * storage.ts — Gestión de tokens en sessionStorage.
+ * Se prefiere sessionStorage sobre localStorage para que la sesión
+ * se destruya automáticamente al cerrar la pestaña.
  */
 
-import type { AuthTokens } from '@/types'
-
-// Access token SOLO en memoria (mas seguro contra XSS)
-let accessToken: string | null = null
-
-const REFRESH_KEY = 'cb_rt' // Clave de sessionStorage para el refresh token
+const ACCESS_TOKEN_KEY = 'chatbunker_access'
+const REFRESH_TOKEN_KEY = 'chatbunker_refresh'
+const USER_DATA_KEY = 'chatbunker_user'
 
 export const TokenStorage = {
-  setTokens(tokens: AuthTokens): void {
-    accessToken = tokens.access
-    try {
-      sessionStorage.setItem(REFRESH_KEY, tokens.refresh)
-      // Limpieza defensiva por si existia en versiones previas.
-      localStorage.removeItem(REFRESH_KEY)
-    } catch {
-      // sessionStorage no disponible
-    }
+  getAccessToken: () => sessionStorage.getItem(ACCESS_TOKEN_KEY),
+  getRefreshToken: () => sessionStorage.getItem(REFRESH_TOKEN_KEY),
+  getUser: () => {
+    const data = sessionStorage.getItem(USER_DATA_KEY)
+    return data ? JSON.parse(data) : null
   },
 
-  getAccessToken(): string | null {
-    return accessToken
+  setTokens: (access: string, refresh: string) => {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, access)
+    sessionStorage.setItem(REFRESH_TOKEN_KEY, refresh)
   },
 
-  getRefreshToken(): string | null {
-    try {
-      const current = sessionStorage.getItem(REFRESH_KEY)
-      if (current) return current
-
-      // Migracion temporal: mover token legacy de localStorage.
-      const legacy = localStorage.getItem(REFRESH_KEY)
-      if (!legacy) return null
-
-      sessionStorage.setItem(REFRESH_KEY, legacy)
-      localStorage.removeItem(REFRESH_KEY)
-      return legacy
-    } catch {
-      return null
-    }
+  setAccessToken: (access: string) => {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, access)
   },
 
-  setAccessToken(token: string): void {
-    accessToken = token
+  setUser: (user: any) => {
+    sessionStorage.setItem(USER_DATA_KEY, JSON.stringify(user))
   },
 
-  clearTokens(): void {
-    accessToken = null
-    try {
-      sessionStorage.removeItem(REFRESH_KEY)
-      localStorage.removeItem(REFRESH_KEY)
-    } catch {
-      // silencioso
-    }
-  },
-
-  hasTokens(): boolean {
-    return accessToken !== null || TokenStorage.getRefreshToken() !== null
+  clearTokens: () => {
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+    sessionStorage.removeItem(REFRESH_TOKEN_KEY)
+    sessionStorage.removeItem(USER_DATA_KEY)
   },
 }

@@ -47,13 +47,16 @@ export default function NewChatModal({ isOpen, onClose, onInvitationSent }: NewC
   const handleSendInvitation = async (email: string) => {
     setIsSending(email)
     try {
+      console.log('[Invitación] Enviando a:', email)
       await chatApi.sendInvitation(email)
+      console.log('[Invitación] Enviada con éxito')
       onInvitationSent()
       onClose()
       setQuery('')
     } catch (err: any) {
       console.error('Error enviando invitación:', err)
-      alert(err?.response?.data?.error ?? 'No se pudo enviar la invitación.')
+      const msg = err?.response?.data?.message || err?.response?.data?.error || 'No se pudo enviar la invitación.'
+      alert(msg)
     } finally {
       setIsSending(null)
     }

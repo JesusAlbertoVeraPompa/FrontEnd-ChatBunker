@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Extraemos los tokens de data.tokens dentro del cuerpo de la respuesta (response.data)
     const backendData = (response as any).data
     if (backendData?.tokens) {
-      TokenStorage.setTokens(backendData.tokens)
+      TokenStorage.setTokens(backendData.tokens.access, backendData.tokens.refresh)
       // Usamos los datos del usuario que ya vienen en la respuesta para no hacer otra petición
       setUser(backendData.user)
     }
