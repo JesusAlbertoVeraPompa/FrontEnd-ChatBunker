@@ -51,6 +51,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // response.data es el cuerpo ApiResponse de Axios, response.data.data es el array Conversation[]
       const conversationsList = response.data.data
       
+      if (!conversationsList || !Array.isArray(conversationsList)) {
+        setConversations([])
+        return
+      }
+      
       const enriched = conversationsList.map((conv: Conversation) => ({
         ...conv,
         contact: conv.participants.find((p: User) => p.id !== user?.id) ?? conv.participants[0],
