@@ -50,7 +50,6 @@ export default function DashboardPage() {
     try {
       const response = await chatApi.getInvitations()
       // response.data es el ApiResponse
-      // response.data.data es la lista (any[])
       const list = response.data?.data || []
       
       if (list.length > prevInvitationsCount.current) {
@@ -59,16 +58,22 @@ export default function DashboardPage() {
       prevInvitationsCount.current = list.length
       setInvitations(list)
     } catch (err) {
-      console.error('Error cargando invitaciones:', err)
+      // Silencioso: el backend puede estar reiniciándose
     }
   }
 
   useEffect(() => {
     fetchInvitations()
-    // Polling más frecuente (5s) para sensación de tiempo real sin WS global
-    const interval = setInterval(fetchInvitations, 5000)
-    return () => clearInterval(interval)
-  }, [])
+    // Polling más frecuente (5s) para invitaciones
+    const invInterval = setInterval(fetchInvitations, 5000)
+    // Polling más lento (10s) para conversaciones
+    const convInterval = setInterval(refreshConversations, 10000)
+    
+    return () => {
+      clearInterval(invInterval)
+      clearInterval(convInterval)
+    }
+  }, [refreshConversations])
 
   const handleAcceptInvitation = async (id: string) => {
     try {

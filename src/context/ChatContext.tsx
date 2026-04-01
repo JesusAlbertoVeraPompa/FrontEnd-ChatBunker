@@ -50,6 +50,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const response = await chatApi.getConversations()
       // response.data es el cuerpo ApiResponse de Axios, response.data.data es el array Conversation[]
       const conversationsList = response.data.data
+      console.log('[Chat] Conversaciones recibidas:', conversationsList?.length)
       
       if (!conversationsList || !Array.isArray(conversationsList)) {
         setConversations([])

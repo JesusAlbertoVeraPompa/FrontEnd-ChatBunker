@@ -16,16 +16,14 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(TokenStorage.getUser())
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading] = useState(false)
 
-  // Al montar: restaurar sesión de forma silenciosa si hay tokens
+  // Restaurar sesión de forma silenciosa al montar si hay refresh token
   useEffect(() => {
     const restore = async () => {
       const refreshToken = TokenStorage.getRefreshToken()
-      if (!refreshToken) {
-        setIsLoading(false)
-        return
-      }
+      if (!refreshToken) return
+      
       try {
         const response = await authApi.refreshToken(refreshToken)
         const newAccess = response.data?.data?.access
@@ -39,11 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (err) {
-        console.error('[Auth] Restauración fallida:', err)
-        TokenStorage.clearTokens()
-        setUser(null)
-      } finally {
-        setIsLoading(false)
+        console.warn('[Auth] No se pudo refrescar la sesión automáticamente')
       }
     }
     restore()
