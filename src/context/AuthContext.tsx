@@ -15,10 +15,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(TokenStorage.getUser())
   const [isLoading, setIsLoading] = useState(true)
 
-  // Al montar: si hay refresh token, restaurar sesión
+  // Al montar: restaurar sesión de forma silenciosa si hay tokens
   useEffect(() => {
     const restore = async () => {
       const refreshToken = TokenStorage.getRefreshToken()
@@ -27,17 +27,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       try {
-        const { data: response } = await authApi.refreshToken(refreshToken)
-        // Extraer access del formato envuelto
-        const newAccess = (response as any).data.access
-        TokenStorage.setAccessToken(newAccess)
-        
-        const { data: userResponse } = await usersApi.me()
-        // Extraer user del formato envuelto
-        setUser((userResponse as any).data)
+        const response = await authApi.refreshToken(refreshToken)
+        const newAccess = response.data?.data?.access
+        if (newAccess) {
+          TokenStorage.setAccessToken(newAccess)
+          const userResponse = await usersApi.me()
+          const userData = userResponse.data?.data
+          if (userData) {
+            setUser(userData)
+            TokenStorage.setUser(userData)
+          }
+        }
       } catch (err) {
-        console.error('Error restaurando sesión:', err)
+        console.error('[Auth] Restauración fallida:', err)
         TokenStorage.clearTokens()
+        setUser(null)
       } finally {
         setIsLoading(false)
       }
@@ -46,15 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const socialLogin = useCallback(async (accessToken: string, provider: 'google' | 'facebook') => {
-    // La respuesta del backend es: { status: "success", message: "...", data: { tokens: { ... }, user: { ... } } }
-    const { data: response } = await authApi.socialLogin(accessToken, provider)
+    const response = await authApi.socialLogin(accessToken, provider)
     
-    // Extraemos los tokens de data.tokens dentro del cuerpo de la respuesta (response.data)
-    const backendData = (response as any).data
+    const backendData = response.data?.data
     if (backendData?.tokens) {
       TokenStorage.setTokens(backendData.tokens.access, backendData.tokens.refresh)
-      // Usamos los datos del usuario que ya vienen en la respuesta para no hacer otra petición
       setUser(backendData.user)
+      TokenStorage.setUser(backendData.user)
     }
   }, [])
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Plus, MessageSquare, Settings2, Bell, ChevronRight,
-  LogOut, Shield, User, Phone, Video, Lock, Trash2
+  LogOut, Shield, User, Phone, Video, Lock, Trash2, X
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useChat } from '@/context/ChatContext'
@@ -48,10 +48,11 @@ export default function DashboardPage() {
 
   const fetchInvitations = async () => {
     try {
-      const { data: response } = await chatApi.getInvitations()
-      const list = (response as any).data || []
+      const response = await chatApi.getInvitations()
+      // response.data es el ApiResponse
+      // response.data.data es la lista (any[])
+      const list = response.data?.data || []
       
-      // Si hay más invitaciones que antes, sonar el ping
       if (list.length > prevInvitationsCount.current) {
         playPing()
       }
@@ -853,7 +854,11 @@ function RightSidebar({ onLogoutClick }: { onLogoutClick: () => void }) {
         >
           {activeView === 'menu' ? 'BUNKER CORE' : activeView.toUpperCase()}
         </span>
-        <IconBtn onClick={() => setActiveView('menu')}><Settings2 size={15} /></IconBtn>
+        {activeView !== 'menu' && (
+          <IconBtn onClick={() => setActiveView('menu')}>
+            <X size={15} />
+          </IconBtn>
+        )}
       </div>
 
       {renderContent()}

@@ -183,7 +183,7 @@ export default function LoginPage() {
             )}
           </motion.button>
 
-          <p style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: '"Space Mono", monospace' }}>
+          <p style={{ marginTop: 24, fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: '"Space Mono", monospace' }}>
             Protegido por protocolos de cifrado militar AES-256
           </p>
 

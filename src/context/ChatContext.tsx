@@ -11,7 +11,7 @@ import { chatApi, buildWSUrl } from '@/api/chat'
 import { TokenStorage } from '@/utils/storage'
 import { generateKeyPair, deriveSharedKey, encryptMessage, decryptMessage, isCiphertext } from '@/utils/crypto'
 import type { KeyPair } from '@/utils/crypto'
-import type { Conversation, Message, WSIncoming } from '@/types'
+import type { Conversation, Message, User, WSIncoming } from '@/types'
 import { useAuth } from './AuthContext'
 
 interface ChatContextValue {
@@ -47,15 +47,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const refreshConversations = useCallback(async () => {
     setIsLoadingConversations(true)
     try {
-      const { data } = await chatApi.getConversations()
-      // Añadir el "contact" (el participante que NO es el usuario actual)
-      const enriched = data.map((conv) => ({
+      const response = await chatApi.getConversations()
+      // response.data es el cuerpo ApiResponse de Axios, response.data.data es el array Conversation[]
+      const conversationsList = response.data.data
+      
+      const enriched = conversationsList.map((conv: Conversation) => ({
         ...conv,
-        contact: conv.participants.find((p) => p.id !== user?.id) ?? conv.participants[0],
+        contact: conv.participants.find((p: User) => p.id !== user?.id) ?? conv.participants[0],
       }))
       setConversations(enriched)
-    } catch {
-      // Error de red — mantener estado anterior
+    } catch (err) {
+      console.error('[Chat] Error cargando conversaciones:', err)
     } finally {
       setIsLoadingConversations(false)
     }
@@ -88,9 +90,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Cargar historial
       setIsLoadingMessages(true)
       try {
-        const { data } = await chatApi.getChatHistory(conv.id)
-        // Intentar descifrar mensajes del historial (si hay clave compartida)
-        setMessages(data)
+        const response = await chatApi.getChatHistory(conv.id)
+        setMessages(response.data.data)
       } catch {
         setMessages([])
       } finally {

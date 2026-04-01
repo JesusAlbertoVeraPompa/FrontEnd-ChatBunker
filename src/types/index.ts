@@ -96,6 +96,13 @@ export interface RegisterPayload {
 
 // ─── API responses ────────────────────────────────────────────────────────────
 
+export interface ApiResponse<T> {
+  success: boolean
+  status_code: number
+  message: string
+  data: T
+}
+
 export interface ApiError {
   detail?: string
   [key: string]: unknown

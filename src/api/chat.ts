@@ -1,33 +1,33 @@
 import { apiClient } from './client'
-import type { Conversation, Message, User } from '@/types'
+import type { Conversation, Message, User, ApiResponse } from '@/types'
 
 export const chatApi = {
   getConversations() {
-    return apiClient.get<Conversation[]>('/chat/conversations/')
+    return apiClient.get<ApiResponse<Conversation[]>>('/chat/conversations/')
   },
 
   createConversation(userId: string) {
-    return apiClient.post<Conversation>('/chat/conversations/', { user_id: userId })
+    return apiClient.post<ApiResponse<Conversation>>('/chat/conversations/', { user_id: userId })
   },
 
   getInvitations() {
-    return apiClient.get<any[]>('/chat/invitations/')
+    return apiClient.get<ApiResponse<any[]>>('/chat/invitations/')
   },
 
   sendInvitation(email: string) {
-    return apiClient.post('/chat/invitations/', { email })
+    return apiClient.post<ApiResponse<any>>('/chat/invitations/', { email })
   },
 
   acceptInvitation(invitationId: string) {
-    return apiClient.post<Conversation>(`/chat/invitations/${invitationId}/accept/`)
+    return apiClient.post<ApiResponse<Conversation>>(`/chat/invitations/${invitationId}/accept/`)
   },
 
   rejectInvitation(invitationId: string) {
-    return apiClient.post(`/chat/invitations/${invitationId}/reject/`)
+    return apiClient.post<ApiResponse<any>>(`/chat/invitations/${invitationId}/reject/`)
   },
 
   getChatHistory(conversationId: string) {
-    return apiClient.get<Message[]>(`/chat/conversations/${conversationId}/history/`)
+    return apiClient.get<ApiResponse<Message[]>>(`/chat/conversations/${conversationId}/history/`)
   },
 
   deleteConversation(conversationId: string) {
@@ -35,11 +35,11 @@ export const chatApi = {
   },
 
   searchUsers(query: string) {
-    return apiClient.get<User[]>(`/users/search/?q=${query}`)
+    return apiClient.get<ApiResponse<User[]>>(`/users/search/?q=${query}`)
   },
 
   getMediaSignedUrl(mediaId: string) {
-    return apiClient.get<{ download_url: string }>(`/chat/media/${mediaId}/sign/`)
+    return apiClient.get<ApiResponse<{ download_url: string }>>(`/chat/media/${mediaId}/sign/`)
   },
 }
 
