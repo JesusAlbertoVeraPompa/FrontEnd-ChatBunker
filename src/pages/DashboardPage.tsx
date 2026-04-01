@@ -654,6 +654,7 @@ function ChatWindow({
       <MessageInput
         onSend={sendMessage}
         isEncrypted={isEncrypted}
+        disabled={!isEncrypted}
       />
     </div>
   )

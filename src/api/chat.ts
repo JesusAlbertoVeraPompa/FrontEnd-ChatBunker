@@ -42,9 +42,11 @@ export const chatApi = {
 // ─── WebSocket URL builder ────────────────────────────────────────────────────
 
 export function buildWSUrl(conversationId: string, accessToken: string): string {
-  const isProd = window.location.hostname !== 'localhost'
-  const protocol = isProd ? 'wss:' : 'ws:'
-  const host = isProd ? 'backend-chatbunker.onrender.com' : window.location.host
+  const { protocol, host, hostname } = window.location
+  const isProd = hostname !== 'localhost' && hostname !== '127.0.0.1'
   
-  return `${protocol}//${host}/ws/chat/${conversationId}/?token=${accessToken}`
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
+  const wsHost = isProd ? 'backend-chatbunker.onrender.com' : host
+  
+  return `${wsProtocol}//${wsHost}/ws/chat/${conversationId}/?token=${accessToken}`
 }

@@ -130,20 +130,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             sharedKeyRef.current = shared
             setIsEncrypted(true)
 
-            // Si no teníamos la llave y el mensaje viene del otro, respondemos con la nuestra
+            // Si el mensaje viene del partner, respondemos con nuestra llave para asegurar simetría
             if (msg.sender !== user?.id && !hadKey) {
               ws.send(JSON.stringify({ action: 'key_exchange', public_key: keyPairRef.current.publicKeyBase64 }))
             }
 
-            // Re-descifrar mensajes del historial con la nueva clave
-            setMessages((prev) =>
-              prev.map((m) => ({
-                ...m,
-                decrypted_content: m.decrypted_content ?? m.encrypted_content,
-              }))
-            )
-          } catch {
-            // Error en derivación de clave
+            // Re-descifrar mensajes del historial con la nueva clave compartida
+            setMessages((prev) => {
+              const updated = [...prev]
+              // Procesar descifrado asíncronamente para no bloquear el renderizado
+              Promise.all(
+                updated.map(async (m) => {
+                  if (m.encrypted_content && isCiphertext(m.encrypted_content) && !m.decrypted_content) {
+                    try {
+                      return { ...m, decrypted_content: await decryptMessage(m.encrypted_content, shared) }
+                    } catch (e) {
+                      return { ...m, decrypted_content: '[Error al descifrar]' }
+                    }
+                  }
+                  return m
+                })
+              ).then((decryptedList) => {
+                setMessages(decryptedList)
+              })
+              return updated
+            })
+          } catch (err) {
+            console.error('[WS] Error en derivación de clave:', err)
           }
         }
 
@@ -169,7 +182,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           const newMsg: Message = {
             id: msg.message_id,
             sender: msg.sender,
-            sender_email: '',
+            sender_email: (msg as any).sender_email || '',
             encrypted_content: msg.content,
             decrypted_content: decrypted,
             message_type: (msg.msg_type as 'Text' | 'Audio') ?? 'Text',
@@ -179,12 +192,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
 
           setMessages((prev) => {
-            // Evitar duplicados
             if (prev.some((m) => m.id === msg.message_id)) return prev
             return [...prev, newMsg]
           })
 
-          // Actualizar last_message en la lista de conversaciones
+          // Actualizar last_message en la lista de conversaciones con el mensaje descifrado
           setConversations((prev) =>
             prev.map((c) =>
               c.id === conv.id ? { ...c, last_message: newMsg } : c
@@ -219,11 +231,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const sendMessage = useCallback(async (text: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
-
-    let content = text
-    if (sharedKeyRef.current) {
-      content = await encryptMessage(text, sharedKeyRef.current)
+    if (!sharedKeyRef.current) {
+      console.error('[E2EE] Intento de enviar mensaje sin llave compartida')
+      return
     }
+
+    const content = await encryptMessage(text, sharedKeyRef.current)
 
     wsRef.current.send(
       JSON.stringify({ action: 'send_message', encrypted_content: content, type: 'Text' })

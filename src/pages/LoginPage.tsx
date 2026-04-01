@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { ShieldCheck, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useGoogleLogin } from '@react-oauth/google'
+import { Link } from 'react-router-dom'
 
 export default function LoginPage() {
   const { socialLogin } = useAuth()
@@ -185,8 +186,16 @@ export default function LoginPage() {
           <p style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: '"Space Mono", monospace' }}>
             Protegido por protocolos de cifrado militar AES-256
           </p>
+
+          <p style={{ marginTop: 12, fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+            Al continuar aceptas el aviso de tratamiento y la politica de privacidad de ChatBunker.{' '}
+            <Link to="/privacy" style={{ color: '#7befff' }}>
+              Revisar politica y derechos
+            </Link>
+          </p>
         </div>
       </motion.div>
     </div>
   )
 }
+

@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { ChatProvider } from '@/context/ChatContext'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
+import PrivacyPage from '@/pages/PrivacyPage'
 
 // ─── Ruta protegida ───────────────────────────────────────────────────────────
 
@@ -74,6 +75,8 @@ function AppRoutes() {
         }
       />
 
+      <Route path="/privacy" element={<PrivacyPage />} />
+
       {/* Redirigir registro al login ya que usamos Social Login únicamente */}
       <Route path="/register" element={<Navigate to="/login" replace />} />
 
@@ -101,3 +104,4 @@ export default function App() {
     </AuthProvider>
   )
 }
+
