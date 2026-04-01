@@ -24,7 +24,7 @@ interface ChatContextValue {
   selectConversation: (conv: Conversation) => void
   sendMessage: (text: string) => Promise<void>
   requestDelete: (messageId: string) => void
-  refreshConversations: () => Promise<void>
+  refreshConversations: (silent?: boolean) => Promise<void>
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null)
@@ -44,13 +44,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const sharedKeyRef = useRef<CryptoKey | null>(null)
 
   // Carga de conversaciones
-  const refreshConversations = useCallback(async () => {
-    setIsLoadingConversations(true)
+  const refreshConversations = useCallback(async (silent = false) => {
+    if (!silent) setIsLoadingConversations(true)
     try {
       const response = await chatApi.getConversations()
-      // response.data es el cuerpo ApiResponse de Axios, response.data.data es el array Conversation[]
       const conversationsList = response.data.data
-      console.log('[Chat] Conversaciones recibidas:', conversationsList?.length)
       
       if (!conversationsList || !Array.isArray(conversationsList)) {
         setConversations([])
@@ -65,7 +63,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('[Chat] Error cargando conversaciones:', err)
     } finally {
-      setIsLoadingConversations(false)
+      if (!silent) setIsLoadingConversations(false)
     }
   }, [user?.id])
 
@@ -226,10 +224,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         console.warn('[WS] Conexión cerrada:', event.code, event.reason)
         // Intentar reconectar solo si la conversación sigue activa y no fue un cierre intencional
         if (wsRef.current === ws) {
-          console.log('[WS] Reintentando conexión en 3 segundos...')
+          console.log('[WS] Reintentando conexión en 10 segundos...')
           setTimeout(() => {
             if (activeConversation?.id === conv.id) selectConversation(conv)
-          }, 3000)
+          }, 10000)
         }
       }
     },

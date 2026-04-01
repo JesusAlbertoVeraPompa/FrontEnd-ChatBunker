@@ -67,7 +67,7 @@ export default function DashboardPage() {
     // Polling más frecuente (5s) para invitaciones
     const invInterval = setInterval(fetchInvitations, 5000)
     // Polling más lento (10s) para conversaciones
-    const convInterval = setInterval(refreshConversations, 10000)
+    const convInterval = setInterval(() => refreshConversations(true), 10000)
     
     return () => {
       clearInterval(invInterval)
@@ -477,7 +477,7 @@ function LeftSidebar({
 
       {/* Lista de chats */}
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: 4 }}>
-        {isLoading ? (
+        {isLoading && conversations.length === 0 ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
             <NeonSpinner color="#00f3ff" />
           </div>
