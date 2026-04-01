@@ -11,8 +11,10 @@ export const authApi = {
   },
 
   socialLogin(accessToken: string, provider: 'google' | 'facebook') {
-    // El backend espera /api/v1/auth/google/ o /api/v1/auth/facebook/
+    // El backend espera /api/v1/auth/google/ o /api/v1/auth/social/
+    // El SocialLoginSerializer requiere los campos 'provider' y 'access_token'
     return apiClient.post<ApiResponse<{ tokens: AuthTokens; user: User }>>(`/auth/${provider}/`, {
+      provider: provider,
       access_token: accessToken,
     })
   },
